@@ -1,15 +1,22 @@
 from __future__ import annotations
 
+import mimetypes
+import re
 import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, Response
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from app.config import SUPPORTED_MODELS, Settings, load_settings
 from app.jobs import JobManager
-from app.providers.base import TranscriptionProvider
+from app.providers.base import Segment, TranscriptionProvider
 from app.storage import JobStore
 from app.validation import UploadValidationError, validate_file_name
+
+WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
 ERROR_MESSAGES = {
     "empty_filename": ("Nome file mancante.", "Missing file name."),
@@ -21,6 +28,10 @@ ERROR_MESSAGES = {
     ),
     "not_found": ("Lavoro non trovato.", "Job not found."),
     "invalid_model": ("Modello non valido.", "Invalid model."),
+    "not_editable": (
+        "La trascrizione non è ancora pronta.",
+        "The transcript is not ready yet.",
+    ),
 }
 
 
@@ -36,6 +47,16 @@ def _job_out(job: dict) -> dict:
     out = dict(job)
     out["is_demo"] = bool(out.get("is_demo"))
     return out
+
+
+class SegmentIn(BaseModel):
+    start: float
+    end: float
+    text: str
+
+
+class SegmentsIn(BaseModel):
+    segments: list[SegmentIn]
 
 
 def create_app(
@@ -124,6 +145,62 @@ def create_app(
             out["segments"] = store.get_segments(job_id)
         return out
 
+    @app.get("/api/jobs/{job_id}/media")
+    def get_media(job_id: str, request: Request):
+        job = store.get_job(job_id)
+        if job is None:
+            _error(404, "not_found")
+        stored = Path(job["stored_path"])
+        if not stored.is_file():
+            _error(404, "not_found")
+        media_type = mimetypes.guess_type(stored.name)[0] or "application/octet-stream"
+        size = stored.stat().st_size
+        range_header = request.headers.get("range")
+        if range_header:
+            match = re.fullmatch(r"bytes=(\d*)-(\d*)", range_header.strip())
+            if match:
+                start_s, end_s = match.groups()
+                if start_s == "" and end_s == "":
+                    start, end = 0, size - 1
+                elif start_s == "":
+                    length = min(int(end_s), size)
+                    start, end = size - length, size - 1
+                else:
+                    start = int(start_s)
+                    end = min(int(end_s), size - 1) if end_s else size - 1
+                if start < 0 or start > end or start >= size:
+                    return Response(
+                        status_code=416,
+                        headers={"Content-Range": f"bytes */{size}"},
+                    )
+                with open(stored, "rb") as f:
+                    f.seek(start)
+                    data = f.read(end - start + 1)
+                return Response(
+                    content=data,
+                    status_code=206,
+                    media_type=media_type,
+                    headers={
+                        "Content-Range": f"bytes {start}-{end}/{size}",
+                        "Accept-Ranges": "bytes",
+                    },
+                )
+        return FileResponse(
+            stored, media_type=media_type, headers={"Accept-Ranges": "bytes"}
+        )
+
+    @app.put("/api/jobs/{job_id}/segments")
+    def update_segments(job_id: str, payload: SegmentsIn):
+        job = store.get_job(job_id)
+        if job is None:
+            _error(404, "not_found")
+        if job["status"] != "done":
+            _error(409, "not_editable")
+        store.save_segments(
+            job_id, [Segment(s.start, s.end, s.text) for s in payload.segments]
+        )
+        return {"ok": True, "count": len(payload.segments)}
+
     @app.delete("/api/jobs/{job_id}", status_code=204)
     def delete_job(job_id: str):
         job = store.get_job(job_id)
@@ -133,5 +210,8 @@ def create_app(
         if stored.exists():
             stored.unlink()
         store.delete_job(job_id)
+
+    if WEB_DIR.is_dir() and (WEB_DIR / "index.html").is_file():
+        app.mount("/", StaticFiles(directory=str(WEB_DIR), html=True), name="web")
 
     return app

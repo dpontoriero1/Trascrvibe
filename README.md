@@ -14,8 +14,8 @@ Trascrvibe trascrive file audio e video **in locale**, sul tuo computer, e resti
 | Provider demo marcato [DEMO] | Implementato |
 | Motore locale faster-whisper | Implementato (richiede `pip install -r requirements.txt`; alla prima esecuzione scarica il modello) |
 | Upload, validazione, coda lavori, API REST | Implementato e testato (con provider demo) |
-| UI bilingue IT/EN | Pianificato (prossimo commit) |
-| Export TXT/SRT/VTT | Pianificato |
+| UI web bilingue IT/EN (upload, stati, editor, player) | Implementata (richiede `npm install && npm run dev` nella cartella `web/`) |
+| Export TXT/SRT/VTT | Pianificato (prossimo commit) |
 | Riconoscimento parlanti | Fase successiva all'MVP |
 | Traduzione | Fase successiva all'MVP |
 
@@ -24,6 +24,7 @@ Il provider demo **non trascrive davvero**: ogni suo output è marcato `[DEMO]` 
 ## Requisiti
 
 - Python 3.10 o superiore
+- Node.js 18 o superiore (solo per la UI web)
 - Windows, macOS o Linux
 
 ## Installazione (sviluppo)
@@ -45,13 +46,24 @@ pytest
 
 I test usano il provider demo: non richiedono modelli installati e non toccano file reali.
 
-## Avvio (API; la UI web arriva nel prossimo commit)
+## Avvio
+
+1. Avvia il backend:
 
 ```bash
 uvicorn "app.main:create_app" --factory --host 127.0.0.1 --port 8000
 ```
 
-- Documentazione interattiva delle API: http://127.0.0.1:8000/docs
+2. In un secondo terminale, avvia la UI:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+La UI è disponibile su http://localhost:5173 e usa il backend su http://127.0.0.1:8000.
+
 - L'app ascolta **solo su 127.0.0.1**: nessun accesso dalla rete.
 - Modalità demo (senza faster-whisper installato): imposta `TRSV_DEFAULT_PROVIDER=demo` in `.env`. Ogni output sarà marcato `[DEMO]`.
 - Con `TRSV_DEFAULT_PROVIDER=faster-whisper` (predefinito) serve `pip install -r requirements.txt`; alla prima trascrizione il modello viene scaricato in locale.
@@ -62,7 +74,7 @@ Copia `.env.example` in `.env` e modifica i valori. Trascrvibe **non richiede al
 
 ## Licenze
 
-Il codice di Trascrvibe è rilasciato sotto licenza MIT. Le dipendenze mantengono le rispettive licenze: FastAPI e Uvicorn (MIT), faster-whisper (MIT), modelli Whisper originali di OpenAI (MIT).
+Il codice di Trascrvibe è rilasciato sotto licenza MIT. Le dipendenze mantengono le rispettive licenze: FastAPI e Uvicorn (MIT), faster-whisper (MIT), React e Vite (MIT), modelli Whisper originali di OpenAI (MIT).
 
 ---
 
