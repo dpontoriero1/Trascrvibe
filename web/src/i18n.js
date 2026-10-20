@@ -31,6 +31,7 @@ export const STRINGS = {
     footerNote: 'i tuoi file restano sul tuo computer',
     retry: 'Riprova',
     close: 'Chiudi',
+    exportAs: 'Esporta come',
   },
   en: {
     tagline: 'Local transcription of audio and video files',
@@ -63,6 +64,7 @@ export const STRINGS = {
     footerNote: 'your files stay on your computer',
     retry: 'Retry',
     close: 'Close',
+    exportAs: 'Export as',
   },
 }
 

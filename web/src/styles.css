@@ -200,6 +200,28 @@ video {
   margin: 0.5rem 0;
 }
 
+.export-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.6rem 0 1rem;
+}
+
+.export-link {
+  background: #1c2740;
+  color: #5fd4c4;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.export-link:hover {
+  background: #243252;
+}
+
 button:not(.ts):not(.back):not(.lang-switch button) {
   background: #2a7a6e;
   border: none;

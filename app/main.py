@@ -5,18 +5,25 @@ import re
 import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from app.config import SUPPORTED_MODELS, Settings, load_settings
+from app.exporters import export_srt, export_txt, export_vtt
 from app.jobs import JobManager
 from app.providers.base import Segment, TranscriptionProvider
 from app.storage import JobStore
 from app.validation import UploadValidationError, validate_file_name
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+
+EXPORT_FORMATS = {
+    "txt": ("text/plain", export_txt),
+    "srt": ("application/x-subrip", export_srt),
+    "vtt": ("text/vtt", export_vtt),
+}
 
 ERROR_MESSAGES = {
     "empty_filename": ("Nome file mancante.", "Missing file name."),
@@ -31,6 +38,10 @@ ERROR_MESSAGES = {
     "not_editable": (
         "La trascrizione non è ancora pronta.",
         "The transcript is not ready yet.",
+    ),
+    "invalid_format": (
+        "Formato di esportazione non valido.",
+        "Invalid export format.",
     ),
 }
 
@@ -47,6 +58,12 @@ def _job_out(job: dict) -> dict:
     out = dict(job)
     out["is_demo"] = bool(out.get("is_demo"))
     return out
+
+
+def _safe_stem(name: str) -> str:
+    stem = Path((name or "").replace("\\", "/")).stem
+    cleaned = "".join(c for c in stem if c.isalnum() or c in " ._-(){}'")
+    return cleaned.strip() or "trascrizione"
 
 
 class SegmentIn(BaseModel):
@@ -200,6 +217,30 @@ def create_app(
             job_id, [Segment(s.start, s.end, s.text) for s in payload.segments]
         )
         return {"ok": True, "count": len(payload.segments)}
+
+    @app.get("/api/jobs/{job_id}/export")
+    def export_job(job_id: str, format: str = Query("txt")):
+        job = store.get_job(job_id)
+        if job is None:
+            _error(404, "not_found")
+        if job["status"] != "done":
+            _error(409, "not_editable")
+        fmt = (format or "").strip().lower()
+        if fmt not in EXPORT_FORMATS:
+            _error(422, "invalid_format")
+        media_type, exporter = EXPORT_FORMATS[fmt]
+        segments = store.get_segments(job_id)
+        content = exporter(
+            [Segment(s["start"], s["end"], s["text"]) for s in segments]
+        )
+        download_name = f"{_safe_stem(job['original_name'])}.{fmt}"
+        return Response(
+            content=content,
+            media_type=f"{media_type}; charset=utf-8",
+            headers={
+                "Content-Disposition": f'attachment; filename="{download_name}"'
+            },
+        )
 
     @app.delete("/api/jobs/{job_id}", status_code=204)
     def delete_job(job_id: str):

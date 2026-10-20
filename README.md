@@ -6,7 +6,7 @@ Trascrvibe trascrive file audio e video **in locale**, sul tuo computer, e resti
 - **UI bilingue**: italiano e inglese.
 - **Provider astratto**: motore reale (`faster-whisper`) o modalità demo esplicitamente marcata.
 
-## Stato del progetto
+## Stato del progetto — MVP completo
 
 | Area | Stato |
 |---|---|
@@ -14,8 +14,8 @@ Trascrvibe trascrive file audio e video **in locale**, sul tuo computer, e resti
 | Provider demo marcato [DEMO] | Implementato |
 | Motore locale faster-whisper | Implementato (richiede `pip install -r requirements.txt`; alla prima esecuzione scarica il modello) |
 | Upload, validazione, coda lavori, API REST | Implementato e testato (con provider demo) |
-| UI web bilingue IT/EN (upload, stati, editor, player) | Implementata (richiede `npm install && npm run dev` nella cartella `web/`) |
-| Export TXT/SRT/VTT | Pianificato (prossimo commit) |
+| UI web bilingue IT/EN (upload, stati, editor, player) | Implementata |
+| Export TXT/SRT/VTT | Implementato e testato |
 | Riconoscimento parlanti | Fase successiva all'MVP |
 | Traduzione | Fase successiva all'MVP |
 
@@ -67,6 +67,10 @@ La UI è disponibile su http://localhost:5173 e usa il backend su http://127.0.0
 - L'app ascolta **solo su 127.0.0.1**: nessun accesso dalla rete.
 - Modalità demo (senza faster-whisper installato): imposta `TRSV_DEFAULT_PROVIDER=demo` in `.env`. Ogni output sarà marcato `[DEMO]`.
 - Con `TRSV_DEFAULT_PROVIDER=faster-whisper` (predefinito) serve `pip install -r requirements.txt`; alla prima trascrizione il modello viene scaricato in locale.
+
+## Esportazione
+
+Dalla pagina del lavoro completato: pulsanti TXT, SRT e VTT (endpoint `GET /api/jobs/{id}/export?format=txt|srt|vtt`). Le esportazioni partono sempre dai segmenti correnti, incluse le modifiche salvate.
 
 ## Configurazione
 

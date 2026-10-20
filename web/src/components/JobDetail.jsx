@@ -121,6 +121,19 @@ export default function JobDetail({ job, t, lang, onBack, onDelete, api }) {
                 <span className="save-status">{t('saved')}</span>
               )}
             </div>
+            <div className="export-row">
+              <span className="hint">{t('exportAs')}</span>
+              {['txt', 'srt', 'vtt'].map((fmt) => (
+                <a
+                  key={fmt}
+                  className="export-link"
+                  href={`/api/jobs/${job.id}/export?format=${fmt}`}
+                  download
+                >
+                  {fmt.toUpperCase()}
+                </a>
+              ))}
+            </div>
             {error && <div className="banner banner-error">{error}</div>}
             <div className="segments">
               {segments.length === 0 ? (
