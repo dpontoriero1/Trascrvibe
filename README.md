@@ -12,10 +12,10 @@ Trascrvibe trascrive file audio e video **in locale**, sul tuo computer, e resti
 |---|---|
 | Configurazione + interfaccia provider | Implementato |
 | Provider demo marcato [DEMO] | Implementato |
-| Motore locale faster-whisper | Pianificato (commit 2) |
-| Upload, validazione, coda lavori | Pianificato (commit 2) |
-| UI bilingue IT/EN | Pianificato (commit 3) |
-| Export TXT/SRT/VTT | Pianificato (commit 4) |
+| Motore locale faster-whisper | Implementato (richiede `pip install -r requirements.txt`; alla prima esecuzione scarica il modello) |
+| Upload, validazione, coda lavori, API REST | Implementato e testato (con provider demo) |
+| UI bilingue IT/EN | Pianificato (prossimo commit) |
+| Export TXT/SRT/VTT | Pianificato |
 | Riconoscimento parlanti | Fase successiva all'MVP |
 | Traduzione | Fase successiva all'MVP |
 
@@ -43,6 +43,19 @@ pip install -r requirements.txt -r requirements-dev.txt
 pytest
 ```
 
+I test usano il provider demo: non richiedono modelli installati e non toccano file reali.
+
+## Avvio (API; la UI web arriva nel prossimo commit)
+
+```bash
+uvicorn "app.main:create_app" --factory --host 127.0.0.1 --port 8000
+```
+
+- Documentazione interattiva delle API: http://127.0.0.1:8000/docs
+- L'app ascolta **solo su 127.0.0.1**: nessun accesso dalla rete.
+- Modalità demo (senza faster-whisper installato): imposta `TRSV_DEFAULT_PROVIDER=demo` in `.env`. Ogni output sarà marcato `[DEMO]`.
+- Con `TRSV_DEFAULT_PROVIDER=faster-whisper` (predefinito) serve `pip install -r requirements.txt`; alla prima trascrizione il modello viene scaricato in locale.
+
 ## Configurazione
 
 Copia `.env.example` in `.env` e modifica i valori. Trascrvibe **non richiede alcuna chiave API**.
@@ -58,8 +71,7 @@ Il codice di Trascrvibe è rilasciato sotto licenza MIT. Le dipendenze mantengon
 Trascrvibe transcribes audio and video files **locally**, on your computer, and returns editable text exportable as TXT, SRT and VTT.
 
 - **Privacy**: files stay on your computer. No data is sent to external services (on first run the Whisper model is downloaded from Hugging Face; everything after that is local).
-
 - **Bilingual UI**: Italian and English.
 - **Abstract provider**: real engine (`faster-whisper`) or an explicitly marked demo mode.
 
-The demo provider **does not actually transcribe**: every output is marked `[DEMO]` and exists only for developing and testing without models installed. See the Italian section above for setup commands.
+The demo provider **does not actually transcribe**: every output is marked `[DEMO]` and exists only for developing and testing without models installed. See the Italian section above for setup, test and run commands.

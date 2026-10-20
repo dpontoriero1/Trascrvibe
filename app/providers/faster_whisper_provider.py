@@ -1,0 +1,73 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from .base import Segment, TranscriptResult, TranscriptionError, TranscriptionProvider
+
+
+class FasterWhisperProvider(TranscriptionProvider):
+    """Motore reale locale basato su faster-whisper (CTranslate2)."""
+
+    name = "faster-whisper"
+    is_demo = False
+    supports_language_detection = True
+
+    def __init__(self, model_size: str = "base", device: str = "auto", compute_type: str = "auto"):
+        self.model_size = model_size
+        self.device = device
+        self.compute_type = compute_type
+        self._model = None
+
+    def _load_model(self):
+        if self._model is None:
+            try:
+                from faster_whisper import WhisperModel
+            except ImportError as exc:
+                raise TranscriptionError(
+                    "faster-whisper non è installato: esegui 'pip install -r requirements.txt'."
+                ) from exc
+            kwargs = {}
+            if self.device != "auto":
+                kwargs["device"] = self.device
+            if self.compute_type != "auto":
+                kwargs["compute_type"] = self.compute_type
+            try:
+                self._model = WhisperModel(self.model_size, **kwargs)
+            except Exception as exc:
+                raise TranscriptionError(
+                    f"Impossibile caricare il modello '{self.model_size}': {type(exc).__name__}: {exc}"
+                ) from exc
+        return self._model
+
+    def transcribe(
+        self,
+        media_path: Path,
+        language: str | None = None,
+        model_size: str | None = None,
+    ) -> TranscriptResult:
+        model = self._load_model()
+        try:
+            segments_iter, info = model.transcribe(
+                str(media_path), language=language, vad_filter=True
+            )
+            segments = []
+            for seg in segments_iter:
+                text = (seg.text or "").strip()
+                if text:
+                    segments.append(
+                        Segment(start=float(seg.start), end=float(seg.end), text=text)
+                    )
+        except TranscriptionError:
+            raise
+        except Exception as exc:
+            raise TranscriptionError(
+                f"Trascrizione fallita: {type(exc).__name__}: {exc}"
+            ) from exc
+
+        detected = getattr(info, "language", None) or language or "unknown"
+        return TranscriptResult(
+            segments=tuple(segments),
+            language=detected,
+            provider_name=self.name,
+            is_demo=False,
+        )
