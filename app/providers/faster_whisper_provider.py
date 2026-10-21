@@ -32,6 +32,19 @@ class FasterWhisperProvider(TranscriptionProvider):
         self.compute_type = compute_type
         self._model = None
 
+    def _resolve_compute_type(self) -> str:
+        """auto = float16 su GPU NVIDIA, int8 su CPU (molto piu' veloce del float32)."""
+        if self.compute_type != "auto":
+            return self.compute_type
+        try:
+            import ctranslate2
+
+            if ctranslate2.get_cuda_device_count() > 0:
+                return "float16"
+        except Exception:
+            pass
+        return "int8"
+
     def _load_model(self):
         if self._model is None:
             try:
@@ -40,11 +53,11 @@ class FasterWhisperProvider(TranscriptionProvider):
                 raise TranscriptionError(
                     "faster-whisper non è installato: esegui 'pip install -r requirements.txt'."
                 ) from exc
-            kwargs = {}
+            kwargs = {
+                "compute_type": self._resolve_compute_type(),
+            }
             if self.device != "auto":
                 kwargs["device"] = self.device
-            if self.compute_type != "auto":
-                kwargs["compute_type"] = self.compute_type
             try:
                 self._model = WhisperModel(self.model_size, **kwargs)
             except Exception as exc:
@@ -63,9 +76,23 @@ class FasterWhisperProvider(TranscriptionProvider):
         chosen_size = model_size or self.model_size
         options = dict(self._MODEL_OPTIONS.get(chosen_size, {"beam_size": 5}))
         try:
-            segments_iter, info = model.transcribe(
-                str(media_path), language=language, vad_filter=True, **options
-            )
+            try:
+                # Percorso veloce: elaborazione a lotti (batching).
+                from faster_whisper import BatchedInferencePipeline
+
+                pipeline = BatchedInferencePipeline(model=model)
+                segments_iter, info = pipeline.transcribe(
+                    str(media_path),
+                    language=language,
+                    vad_filter=True,
+                    batch_size=8,
+                    beam_size=options.get("beam_size", 5),
+                )
+            except Exception:
+                # Ripiego sicuro: metodo classico, un segmento alla volta.
+                segments_iter, info = model.transcribe(
+                    str(media_path), language=language, vad_filter=True, **options
+                )
             segments = []
             for seg in segments_iter:
                 text = (seg.text or "").strip()

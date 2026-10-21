@@ -40,13 +40,14 @@ Note pratiche:
 - Tutti i modelli funzionano **offline** dopo il primo download.
 - Su un PC senza scheda video potente, `base` o `small` sono la scelta consigliata.
 
-### Ottimizzazioni per modello
+### Ottimizzazioni di efficienza
 
-Trascrvibe sceglie automaticamente i parametri migliori per ogni modello:
+Trascrvibe applica automaticamente queste ottimizzazioni:
 
-- **tiny e base**: `beam_size=1` (ricerca greedy) e nessun contesto dal segmento precedente → massima velocità, ideali per bozze e note brevi.
-- **small, medium e large-v3**: `beam_size=5` → il modello esplora 5 ipotesi per segmento, per la massima qualità su interviste, lezioni e registrazioni importanti.
-- **Tutti**: filtro VAD attivo → i silenzi vengono saltati, evitando lavoro inutile e riducendo le ripetizioni.
+- **Calcolo int8 sulla CPU** (invece di float32): tipicamente 2-4 volte più veloce, con perdita di qualità trascurabile. Con scheda video NVIDIA usa automaticamente `float16`.
+- **Elaborazione a lotti (batching)**: il modello elabora più pezzi di audio insieme invece di uno alla volta; se il batching non è disponibile, ripiega automaticamente sul metodo classico.
+- **Filtro VAD**: i silenzi vengono saltati, evitando lavoro inutile e riducendo le ripetizioni.
+- **Parametri per modello**: `tiny` e `base` usano `beam_size=1` (massima velocità); `small`, `medium` e `large-v3` usano `beam_size=5` (massima qualità).
 
 ## Requisiti
 
