@@ -24,7 +24,7 @@ Il provider demo **non trascrive davvero**: ogni suo output è marcato `[DEMO]` 
 ## Requisiti
 
 - Python 3.10 o superiore
-- Node.js 18 o superiore (solo per la UI web)
+- Node.js 18 o superiore {la libreria av versione 19 (uscita il 29 settembre 2026) ha tolto un comando (metadata_errors) che faster-whisper usa ancora per aprire i file.}(solo per la UI web)
 - Windows, macOS o Linux
 
 ## Installazione (sviluppo)
