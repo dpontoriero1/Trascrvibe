@@ -77,3 +77,14 @@ export function formatTime(seconds) {
   const ss = String(s).padStart(2, '0')
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
 }
+
+const AUDIO_EXT = ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'oga', 'flac', 'opus']
+const VIDEO_EXT = ['mp4', 'webm', 'mov', 'mkv', 'avi', 'wmv']
+
+export function isPlayable(filename) {
+  const match = /\.([a-z0-9]+)$/i.exec(filename || '')
+  const ext = match ? match[1].toLowerCase() : ''
+  if (VIDEO_EXT.includes(ext)) return 'video'
+  if (AUDIO_EXT.includes(ext)) return 'audio'
+  return null
+}

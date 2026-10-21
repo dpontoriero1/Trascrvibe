@@ -1,16 +1,5 @@
 import React, { useRef, useState } from 'react'
 
-const AUDIO_EXT = ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'oga', 'flac', 'opus']
-const VIDEO_EXT = ['mp4', 'webm', 'mov', 'mkv', 'avi', 'wmv']
-
-export function isPlayable(filename) {
-  const match = /\.([a-z0-9]+)$/i.exec(filename || '')
-  const ext = match ? match[1].toLowerCase() : ''
-  if (VIDEO_EXT.includes(ext)) return 'video'
-  if (AUDIO_EXT.includes(ext)) return 'audio'
-  return null
-}
-
 export default function UploadForm({ t, config, onUpload }) {
   const [dragging, setDragging] = useState(false)
   const [language, setLanguage] = useState('auto')
