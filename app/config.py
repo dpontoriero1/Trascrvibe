@@ -13,6 +13,7 @@ ALLOWED_EXTENSIONS = frozenset({
 
 SUPPORTED_MODELS = ("tiny", "base", "small", "medium", "large-v3")
 SUPPORTED_PROVIDERS = ("faster-whisper", "demo")
+DEFAULT_MAX_UPLOAD_MB = 5120
 
 
 @dataclass(frozen=True)
@@ -51,7 +52,7 @@ class Settings:
             data_dir=data_dir,
             upload_dir=data_dir / "uploads",
             db_path=data_dir / "trascrvibe.sqlite",
-            max_upload_mb=int(env.get("TRSV_MAX_UPLOAD_MB", "2048")),
+            max_upload_mb=int(env.get("TRSV_MAX_UPLOAD_MB", str(DEFAULT_MAX_UPLOAD_MB))),
             default_model=model,
             device=env.get("TRSV_DEVICE", "auto").strip().lower() or "auto",
             compute_type=env.get("TRSV_COMPUTE_TYPE", "auto").strip().lower() or "auto",

@@ -10,7 +10,7 @@ def test_defaults():
     assert s.default_language == "auto"
     assert s.upload_dir == s.data_dir / "uploads"
     assert s.db_path.name == "trascrvibe.sqlite"
-    assert s.max_upload_mb == 2048
+    assert s.max_upload_mb == 5120
 
 
 def test_env_overrides():

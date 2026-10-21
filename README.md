@@ -5,6 +5,7 @@ Trascrvibe trascrive file audio e video **in locale**, sul tuo computer, e resti
 - **Privacy**: i file restano sul tuo computer. Nessun dato viene inviato a servizi esterni (al primo avvio il modello Whisper viene scaricato da Hugging Face; poi tutto avviene in locale).
 - **UI bilingue**: italiano e inglese.
 - **Provider astratto**: motore reale (`faster-whisper`) o modalità demo esplicitamente marcata.
+- **Limite di caricamento**: 5 GB per file (configurabile).
 
 ## Stato del progetto — MVP completo
 
@@ -21,10 +22,36 @@ Trascrvibe trascrive file audio e video **in locale**, sul tuo computer, e resti
 
 Il provider demo **non trascrive davvero**: ogni suo output è marcato `[DEMO]` e serve solo a sviluppare e testare senza modelli installati.
 
+## Modelli disponibili
+
+I nomi (tiny, base, small, medium, large-v3) indicano la **dimensione del modello Whisper**: più è grande, più è accurato ma più è lento e occupa memoria.
+
+| Modello | Peso scaricato | Velocità | Qualità | RAM consigliata | Quando usarlo |
+|---|---|---|---|---|---|
+| `tiny` | ~75 MB | ⚡⚡⚡ Molto veloce | Base | ~1 GB | Note veloci, bozze, PC poco potenti |
+| `base` | ~145 MB | ⚡⚡⚡ Veloce | Buona | ~1 GB | Uso quotidiano, buon compromesso (**predefinito**) |
+| `small` | ~500 MB | ⚡⚡ Medio | Molto buona | ~2 GB | Interviste, lezioni, podcast |
+| `medium` | ~1,5 GB | ⚡ Lento | Ottima | ~5 GB | Registrazioni importanti |
+| `large-v3` | ~3 GB | 🐢 Molto lento | Massima | ~10 GB | Massima accuratezza, PC potente |
+
+Note pratiche:
+
+- La qualità dipende molto anche dalla **pulizia dell'audio**: un file chiaro con `base` può superare un file rumoroso con `medium`.
+- Tutti i modelli funzionano **offline** dopo il primo download.
+- Su un PC senza scheda video potente, `base` o `small` sono la scelta consigliata.
+
+### Ottimizzazioni per modello
+
+Trascrvibe sceglie automaticamente i parametri migliori per ogni modello:
+
+- **tiny e base**: `beam_size=1` (ricerca greedy) e nessun contesto dal segmento precedente → massima velocità, ideali per bozze e note brevi.
+- **small, medium e large-v3**: `beam_size=5` → il modello esplora 5 ipotesi per segmento, per la massima qualità su interviste, lezioni e registrazioni importanti.
+- **Tutti**: filtro VAD attivo → i silenzi vengono saltati, evitando lavoro inutile e riducendo le ripetizioni.
+
 ## Requisiti
 
-- Python 3.10 o superiore
-- Node.js 18 o superiore {la libreria av versione 19 (uscita il 29 settembre 2026) ha tolto un comando (metadata_errors) che faster-whisper usa ancora per aprire i file.}(solo per la UI web)
+- Python 3.10 o superiore (consigliato 3.13)
+- Node.js 18 o superiore (solo per la UI web)
 - Windows, macOS o Linux
 
 ## Installazione (sviluppo)
@@ -74,7 +101,7 @@ Dalla pagina del lavoro completato: pulsanti TXT, SRT e VTT (endpoint `GET /api/
 
 ## Configurazione
 
-Copia `.env.example` in `.env` e modifica i valori. Trascrvibe **non richiede alcuna chiave API**.
+Copia `.env.example` in `.env` e modifica i valori. Trascrvibe **non richiede alcuna chiave API**. Il limite di caricamento predefinito è 5 GB (`TRSV_MAX_UPLOAD_MB=5120`).
 
 ## Licenze
 
@@ -89,5 +116,6 @@ Trascrvibe transcribes audio and video files **locally**, on your computer, and 
 - **Privacy**: files stay on your computer. No data is sent to external services (on first run the Whisper model is downloaded from Hugging Face; everything after that is local).
 - **Bilingual UI**: Italian and English.
 - **Abstract provider**: real engine (`faster-whisper`) or an explicitly marked demo mode.
+- **Upload limit**: 5 GB per file (configurable).
 
-The demo provider **does not actually transcribe**: every output is marked `[DEMO]` and exists only for developing and testing without models installed. See the Italian section above for setup, test and run commands.
+The demo provider **does not actually transcribe**: every output is marked `[DEMO]` and exists only for developing and testing without models installed. See the Italian section above for the model guide, setup, test and run commands.

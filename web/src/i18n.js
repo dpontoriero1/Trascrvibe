@@ -6,7 +6,8 @@ export const STRINGS = {
     language: 'Lingua',
     autoDetect: 'Rileva automaticamente',
     model: 'Modello',
-    modelHint: 'tiny = veloce · large-v3 = accurato',
+    modelHint:
+      'tiny/base = veloci · small/medium = bilanciati · large-v3 = massimo dettaglio',
     maxSize: 'Dimensione massima',
     demoBanner:
       'Modalità DEMO attiva: gli output non sono trascrizioni reali.',
@@ -40,7 +41,8 @@ export const STRINGS = {
     language: 'Language',
     autoDetect: 'Detect automatically',
     model: 'Model',
-    modelHint: 'tiny = fast · large-v3 = accurate',
+    modelHint:
+      'tiny/base = fast · small/medium = balanced · large-v3 = most detailed',
     maxSize: 'Max size',
     demoBanner: 'DEMO mode active: outputs are not real transcriptions.',
     jobs: 'Jobs',

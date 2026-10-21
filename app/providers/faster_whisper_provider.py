@@ -12,6 +12,20 @@ class FasterWhisperProvider(TranscriptionProvider):
     is_demo = False
     supports_language_detection = True
 
+    # Ottimizzazioni per modello:
+    # - tiny/base: beam_size=1 (ricerca greedy) e nessun contesto dal segmento
+    #   precedente: massima velocita', ideali per bozze e note brevi.
+    # - small/medium/large-v3: beam_size=5: esplora 5 ipotesi per segmento,
+    #   massima qualita' per interviste, lezioni e registrazioni importanti.
+    # - vad_filter=True per tutti: salta i silenzi, meno lavoro inutile.
+    _MODEL_OPTIONS = {
+        "tiny": {"beam_size": 1, "condition_on_previous_text": False},
+        "base": {"beam_size": 1, "condition_on_previous_text": False},
+        "small": {"beam_size": 5},
+        "medium": {"beam_size": 5},
+        "large-v3": {"beam_size": 5},
+    }
+
     def __init__(self, model_size: str = "base", device: str = "auto", compute_type: str = "auto"):
         self.model_size = model_size
         self.device = device
@@ -46,9 +60,11 @@ class FasterWhisperProvider(TranscriptionProvider):
         model_size: str | None = None,
     ) -> TranscriptResult:
         model = self._load_model()
+        chosen_size = model_size or self.model_size
+        options = dict(self._MODEL_OPTIONS.get(chosen_size, {"beam_size": 5}))
         try:
             segments_iter, info = model.transcribe(
-                str(media_path), language=language, vad_filter=True
+                str(media_path), language=language, vad_filter=True, **options
             )
             segments = []
             for seg in segments_iter:
